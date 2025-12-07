@@ -4,7 +4,17 @@
 
 package frc.robot;
 
+import java.io.File;
+import java.io.IOException;
+
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.TimedRobot;
+import swervelib.SwerveDrive;
+import swervelib.parser.SwerveParser;
 
 /**
  * The methods in this class are called automatically corresponding to each mode, as described in
@@ -16,16 +26,31 @@ public class Robot extends TimedRobot {
    * This function is run when the robot is first started up and should be used for any
    * initialization code.
    */
-  public Robot() {}
+  SwerveDrive swerveDrive;
+
+  public Robot() {
+    File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
+        try {
+            swerveDrive = new SwerveParser(swerveJsonDirectory).createSwerveDrive(3);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+  }
 
   @Override
-  public void robotPeriodic() {}
+  public void robotPeriodic() {
+    swerveDrive.addVisionMeasurement(null, kDefaultPeriod);
+  }
 
   @Override
-  public void autonomousInit() {}
+  public void autonomousInit() {
+    swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+  }
 
   @Override
-  public void autonomousPeriodic() {}
+  public void autonomousPeriodic() {
+    swerveDrive.drive(new Translation2d(1, 0),0, true, false);
+  }
 
   @Override
   public void teleopInit() {}
