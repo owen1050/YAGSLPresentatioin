@@ -11,9 +11,11 @@ import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Filesystem;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.TimedRobot;
+import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import swervelib.SwerveDrive;
 import swervelib.parser.SwerveParser;
 
@@ -31,6 +33,7 @@ public class Robot extends TimedRobot {
   Joystick driverJoystick = new Joystick(0);
   double maxXYV = 3;
   double maxRv = 3;
+  boolean onRed = false;
 
   public Robot() {
     File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
@@ -59,6 +62,9 @@ public class Robot extends TimedRobot {
   @Override
   public void teleopInit() {
     swerveDrive.resetOdometry(new Pose2d(1, 1, new Rotation2d()));
+
+    if(DriverStation.getAlliance().get() == Alliance.Red)
+      onRed = true;
   }
 
   @Override
@@ -67,7 +73,12 @@ public class Robot extends TimedRobot {
     double yV = driverJoystick.getRawAxis(0);
     double rV = -driverJoystick.getRawAxis(4);
 
-    swerveDrive.drive(new Translation2d(maxXYV * xV, maxXYV * yV), maxRv * rV, true, false);
+    if(onRed){
+      swerveDrive.drive(new Translation2d(maxXYV * xV, maxXYV * yV), maxRv * rV, true, false);
+    } else {
+      swerveDrive.drive(new Translation2d(-maxXYV * xV, -maxXYV * yV), maxRv * rV, true, false);
+    }
+    
 
   }
 
