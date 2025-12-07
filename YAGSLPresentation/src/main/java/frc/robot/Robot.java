@@ -7,15 +7,12 @@ package frc.robot;
 import java.io.File;
 import java.io.IOException;
 
-import org.json.simple.parser.ParseException;
-
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.path.PathPlannerPath;
 import com.pathplanner.lib.trajectory.PathPlannerTrajectory;
 import com.pathplanner.lib.trajectory.PathPlannerTrajectoryState;
 
-import edu.wpi.first.math.geometry.Pose2d;
-import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj.Filesystem;
@@ -45,6 +42,10 @@ public class Robot extends TimedRobot {
   Double pathStartTime;
   Field2d pathPlannerGoalPose = new Field2d();
 
+  PIDController pidX = new PIDController(10, 0.25, 0);
+  PIDController pidY = new PIDController(10, 0.25, 0);
+  PIDController pidR = new PIDController(2, 0, 0);
+
   public Robot() {
     File swerveJsonDirectory = new File(Filesystem.getDeployDirectory(), "swerve");
     try {
@@ -56,7 +57,7 @@ public class Robot extends TimedRobot {
 
   @Override
   public void robotPeriodic() {
-    swerveDrive.addVisionMeasurement(null, kDefaultPeriod);
+    
   }
 
   @Override
@@ -86,8 +87,17 @@ public class Robot extends TimedRobot {
   public void autonomousPeriodic() {
     PathPlannerTrajectoryState goalState = trajectory.sample(Timer.getFPGATimestamp() - pathStartTime);
     Translation2d goalTranslation2d = new Translation2d(goalState.fieldSpeeds.vxMetersPerSecond, goalState.fieldSpeeds.vyMetersPerSecond);
+    
+    double xError = pidX.calculate(swerveDrive.getPose().getX(), goalState.pose.getX());
+    double yError = pidY.calculate(swerveDrive.getPose().getY(), goalState.pose.getY());
+    double rError = pidR.calculate(swerveDrive.getPose().getRotation().minus(goalState.pose.getRotation()).getRadians(), 0);
+    
+    Translation2d errorTranslation2d = new Translation2d(xError, yError);
+
+    goalTranslation2d = goalTranslation2d.plus(errorTranslation2d);
+
     pathPlannerGoalPose.setRobotPose(goalState.pose); 
-    swerveDrive.drive(goalTranslation2d, goalState.fieldSpeeds.omegaRadiansPerSecond, true, false);
+    swerveDrive.drive(goalTranslation2d, goalState.fieldSpeeds.omegaRadiansPerSecond + rError, true, false);
   }
 
   @Override
